@@ -1,26 +1,26 @@
 # Tech Spec: Dark Souls Tournament Tracker
 
 > Status: **Draft v0.2**. A living document. Update it as the implementation evolves.
-> Companion to [`feature-spec.md`](./feature-spec.md). It covers *how* we build what that document describes.
+> Companion to [`feature-spec.md`](./feature-spec.md). It covers _how_ we build what that document describes.
 > New to web development? See the [Glossary](#glossary) at the bottom.
 
 ## 1. Stack at a glance
 
-| Layer | Choice | Why |
-|---|---|---|
-| Language | **TypeScript** everywhere | One language, with domain types and scoring logic shared between browser and server |
-| Frontend | **React** + **Vite** | Industry-standard UI library, with a fast dev server and build tool |
-| Routing (frontend) | **React Router** | Maps URLs to screens |
-| Server data fetching | **TanStack Query** | Caches REST responses, with loading and error states |
-| Backend | **Node.js 24 LTS** + **Fastify** | Small, fast HTTP server with a good WebSocket plugin (`@fastify/websocket`) |
-| Validation | **Zod** | One schema gives both runtime validation and TypeScript types |
-| Database | **SQLite** via **better-sqlite3** + **Drizzle ORM** | One database file, zero setup, typed queries, and a migration path to Postgres |
-| Charts | **Recharts** | Simple React charts, used for score over time |
-| Styling | **CSS Modules** + CSS custom properties (design tokens) | Plain CSS you can learn from, with styles scoped per component |
-| Tests | **Vitest** | Fast unit tests, especially for the scoring reducer |
-| Monorepo | **npm workspaces** | No extra tools needed |
-| Packaging | **Docker** (one image) | The same artifact runs locally and on Cloud Run |
-| Hosting (later) | **Google Cloud Run** + **Litestream** → Cloud Storage | Managed containers, with the SQLite file continuously backed up |
+| Layer                | Choice                                                  | Why                                                                                 |
+| -------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Language             | **TypeScript** everywhere                               | One language, with domain types and scoring logic shared between browser and server |
+| Frontend             | **React** + **Vite**                                    | Industry-standard UI library, with a fast dev server and build tool                 |
+| Routing (frontend)   | **React Router**                                        | Maps URLs to screens                                                                |
+| Server data fetching | **TanStack Query**                                      | Caches REST responses, with loading and error states                                |
+| Backend              | **Node.js 24 LTS** + **Fastify**                        | Small, fast HTTP server with a good WebSocket plugin (`@fastify/websocket`)         |
+| Validation           | **Zod**                                                 | One schema gives both runtime validation and TypeScript types                       |
+| Database             | **SQLite** via **better-sqlite3** + **Drizzle ORM**     | One database file, zero setup, typed queries, and a migration path to Postgres      |
+| Charts               | **Recharts**                                            | Simple React charts, used for score over time                                       |
+| Styling              | **CSS Modules** + CSS custom properties (design tokens) | Plain CSS you can learn from, with styles scoped per component                      |
+| Tests                | **Vitest**                                              | Fast unit tests, especially for the scoring reducer                                 |
+| Monorepo             | **npm workspaces**                                      | No extra tools needed                                                               |
+| Packaging            | **Docker** (one image)                                  | The same artifact runs locally and on Cloud Run                                     |
+| Hosting (later)      | **Google Cloud Run** + **Litestream** → Cloud Storage   | Managed containers, with the SQLite file continuously backed up                     |
 
 ---
 
@@ -49,7 +49,8 @@
 ```
 
 Principles:
-1. **The server is the source of truth.** Clients send *commands*, and the server turns them into *events*.
+
+1. **The server is the source of truth.** Clients send _commands_, and the server turns them into _events_.
 2. **Match state = `reduce(events)`.** The same pure function runs on the server (to validate commands and compute results) and in the browser (to render). Scores are never stored as editable numbers.
 3. **All views are just subscribers.** The host console, the combined view, a spectator screen across the room, and a phone on another continent all use the same mechanism. Going from one laptop to many devices is a deployment change, not a rewrite.
 4. **Fully offline in v1.** No CDN fonts or scripts at runtime. Everything is bundled.
@@ -104,14 +105,14 @@ type Ruleset = {
   id: string
   name: string
   description?: string
-  timeLimitMs: number | null          // null = no time limit
+  timeLimitMs: number | null // null = no time limit
   categories: { id: string; name: string }[]
   objectives: Objective[]
   deaths: { points: number; callouts: Callout[]; variants: Variant[] }
   penalties: Penalty[]
   sideEvents: SideEvent[]
   tagCallouts: { tag: string; callouts: Callout[] }[]
-  tiebreakers: Tiebreaker[]           // ordered; a manual fallback is always implied
+  tiebreakers: Tiebreaker[] // ordered; a manual fallback is always implied
 }
 
 type Objective = {
@@ -120,9 +121,9 @@ type Objective = {
   description?: string
   categoryId: string
   points: number
-  tags: string[]                      // e.g. ["boss"]
-  repeat: { kind: "once" } | { kind: "repeatable"; max?: number }
-  endsMatch: boolean                  // implies repeat.kind === "once"
+  tags: string[] // e.g. ["boss"]
+  repeat: { kind: 'once' } | { kind: 'repeatable'; max?: number }
+  endsMatch: boolean // implies repeat.kind === "once"
   variants: Variant[]
   callouts: Callout[]
 }
@@ -130,29 +131,35 @@ type Objective = {
 type Variant = {
   id: string
   name: string
-  bonusPoints: number                 // usually 0
+  bonusPoints: number // usually 0
   callouts: Callout[]
-  calloutMode: "add" | "replace"      // replace = suppress the base event's own callouts
+  calloutMode: 'add' | 'replace' // replace = suppress the base event's own callouts
 }
 
-type Penalty   = { id: string; name: string; points: number /* deduction, ≥ 0 */; callouts: Callout[] }
-type SideEvent = { id: string; name: string; scope: "player" | "general"; callouts: Callout[] }
+type Penalty = {
+  id: string
+  name: string
+  points: number /* deduction, ≥ 0 */
+  callouts: Callout[]
+}
+type SideEvent = { id: string; name: string; scope: 'player' | 'general'; callouts: Callout[] }
 
 type Callout = {
-  target: "actor" | "opponent" | "players" | "everyone"
-  text: string                        // supports {player} and {opponent}
-  drinks?: { kind: "sip" | "shot" | "finish"; amount: number }
+  target: 'actor' | 'opponent' | 'players' | 'everyone'
+  text: string // supports {player} and {opponent}
+  drinks?: { kind: 'sip' | 'shot' | 'finish'; amount: number }
 }
 
 type Tiebreaker =
-  | { kind: "endedMatch" }
-  | { kind: "fewerDeaths" }
-  | { kind: "fewerPenalties" }
-  | { kind: "firstToFinalScore" }
-  | { kind: "manual"; instruction: string }
+  | { kind: 'endedMatch' }
+  | { kind: 'fewerDeaths' }
+  | { kind: 'fewerPenalties' }
+  | { kind: 'firstToFinalScore' }
+  | { kind: 'manual'; instruction: string }
 ```
 
 Notes:
+
 - IDs inside a ruleset (objectives, variants, and so on) are stable short strings, so events can refer to them. The editor generates them.
 - **A replace-mode variant only suppresses callouts attached to the event itself** (objective or death callouts). Tag callouts, such as "boss → everyone drinks", always fire.
 - **Drinks in stats:** `players` counts for both players. `everyone` counts for both players only, since spectators aren't tracked.
@@ -162,49 +169,60 @@ Notes:
 
 ```ts
 type MatchEvent = {
-  seq: number              // 1, 2, 3… per match; gap-free
-  at: string               // server wall-clock time (ISO)
-  matchTimeMs: number      // match clock when it happened (editable via amendment)
+  seq: number // 1, 2, 3… per match; gap-free
+  at: string // server wall-clock time (ISO)
+  matchTimeMs: number // match clock when it happened (editable via amendment)
   body: EventBody
 }
 
 type PlayerSlot = 1 | 2
 
 type EventBody =
-  | { type: "match.started"; countdownMs: number }    // clock starts at `at + countdownMs`
-  | { type: "clock.paused" }
-  | { type: "clock.resumed" }
-  | { type: "objective.completed"; player: PlayerSlot; objectiveId: string; variantIds: string[] }
-  | { type: "death";               player: PlayerSlot; variantIds: string[] }
-  | { type: "penalty";             player: PlayerSlot; penaltyId?: string; reason?: string; points: number }
-  | { type: "sideEvent";           player?: PlayerSlot; sideEventId: string }
-  | { type: "match.timeExpired" }
-  | { type: "match.endedByHost";   reason?: string }
-  | { type: "tiebreaker.resolved"; winner: PlayerSlot }
+  | { type: 'match.started'; countdownMs: number } // clock starts at `at + countdownMs`
+  | { type: 'clock.paused' }
+  | { type: 'clock.resumed' }
+  | { type: 'objective.completed'; player: PlayerSlot; objectiveId: string; variantIds: string[] }
+  | { type: 'death'; player: PlayerSlot; variantIds: string[] }
+  | { type: 'penalty'; player: PlayerSlot; penaltyId?: string; reason?: string; points: number }
+  | { type: 'sideEvent'; player?: PlayerSlot; sideEventId: string }
+  | { type: 'match.timeExpired' }
+  | { type: 'match.endedByHost'; reason?: string }
+  | { type: 'tiebreaker.resolved'; winner: PlayerSlot }
   // corrections: never delete rows, append a correction instead
-  | { type: "event.voided";  targetSeq: number }
-  | { type: "event.amended"; targetSeq: number; changes: { variantIds?: string[]; matchTimeMs?: number; player?: PlayerSlot } }
+  | { type: 'event.voided'; targetSeq: number }
+  | {
+      type: 'event.amended'
+      targetSeq: number
+      changes: { variantIds?: string[]; matchTimeMs?: number; player?: PlayerSlot }
+    }
 ```
 
 **Why append-only, even for undo?** Every client only has to apply "new events since seq N", so syncing stays trivial. The timeline keeps an honest audit trail of corrections. Replays are deterministic.
 
 ### 4.3 Commands (what clients send)
 
-Commands express *intent*. The server's `decide(state, command, now)` either rejects a command with a reason or turns it into events. Examples:
+Commands express _intent_. The server's `decide(state, command, now)` either rejects a command with a reason or turns it into events. Examples:
 
 ```ts
 type Command =
-  | { type: "start"; countdownMs?: number }
-  | { type: "pause" } | { type: "resume" }
-  | { type: "completeObjective"; player: PlayerSlot; objectiveId: string; variantIds?: string[] }
-  | { type: "logDeath"; player: PlayerSlot; variantIds?: string[] }
-  | { type: "givePenalty"; player: PlayerSlot; penaltyId?: string; reason?: string; points?: number }
-  | { type: "logSideEvent"; player?: PlayerSlot; sideEventId: string }
-  | { type: "setVariants"; targetSeq: number; variantIds: string[] }
-  | { type: "undo"; targetSeq: number }   // client says *which* event, so two hosts can't undo the wrong one
-  | { type: "amend"; targetSeq: number; changes: { matchTimeMs?: number; player?: PlayerSlot } }
-  | { type: "endMatch"; reason?: string }
-  | { type: "resolveTiebreaker"; winner: PlayerSlot }
+  | { type: 'start'; countdownMs?: number }
+  | { type: 'pause' }
+  | { type: 'resume' }
+  | { type: 'completeObjective'; player: PlayerSlot; objectiveId: string; variantIds?: string[] }
+  | { type: 'logDeath'; player: PlayerSlot; variantIds?: string[] }
+  | {
+      type: 'givePenalty'
+      player: PlayerSlot
+      penaltyId?: string
+      reason?: string
+      points?: number
+    }
+  | { type: 'logSideEvent'; player?: PlayerSlot; sideEventId: string }
+  | { type: 'setVariants'; targetSeq: number; variantIds: string[] }
+  | { type: 'undo'; targetSeq: number } // client says *which* event, so two hosts can't undo the wrong one
+  | { type: 'amend'; targetSeq: number; changes: { matchTimeMs?: number; player?: PlayerSlot } }
+  | { type: 'endMatch'; reason?: string }
+  | { type: 'resolveTiebreaker'; winner: PlayerSlot }
 ```
 
 Examples of rejections: a once-only objective already completed, the max count reached, the match not live, an unknown ID, or undoing an event that is already voided.
@@ -216,18 +234,24 @@ function reduceMatch(snapshot: Ruleset, events: MatchEvent[]): MatchState
 ```
 
 It works in two passes:
-1. **Resolve corrections.** Apply `event.voided` and `event.amended` to get the *effective* event list, sorted by `matchTimeMs` and then by `seq`.
+
+1. **Resolve corrections.** Apply `event.voided` and `event.amended` to get the _effective_ event list, sorted by `matchTimeMs` and then by `seq`.
 2. **Fold.** Walk the effective events to compute:
 
 ```ts
 type MatchState = {
-  status: "ready" | "live" | "paused" | "tiebreaker" | "finished"
-  clock: { startsAt?: string; runningSince?: string; elapsedBeforeMs: number; limitMs: number | null }
+  status: 'ready' | 'live' | 'paused' | 'tiebreaker' | 'finished'
+  clock: {
+    startsAt?: string
+    runningSince?: string
+    elapsedBeforeMs: number
+    limitMs: number | null
+  }
   players: [PlayerState, PlayerState]
-  timeline: TimelineEntry[]          // effective events + points delta + derived callouts
-  callouts: DerivedCallout[]         // { sourceSeq, target, resolvedText, drinks, forPlayers }
-  end?: { reason: "timeLimit" | "objective" | "host"; matchTimeMs: number; byPlayer?: PlayerSlot }
-  result?: { winner: PlayerSlot; decidedBy: "points" | Tiebreaker["kind"] }
+  timeline: TimelineEntry[] // effective events + points delta + derived callouts
+  callouts: DerivedCallout[] // { sourceSeq, target, resolvedText, drinks, forPlayers }
+  end?: { reason: 'timeLimit' | 'objective' | 'host'; matchTimeMs: number; byPlayer?: PlayerSlot }
+  result?: { winner: PlayerSlot; decidedBy: 'points' | Tiebreaker['kind'] }
   pendingTiebreaker?: { instruction?: string }
 }
 
@@ -237,11 +261,12 @@ type PlayerState = {
   deaths: number
   penalties: { seq: number; points: number; label: string }[]
   drinks: { sip: number; shot: number; finish: number }
-  scoreHistory: { matchTimeMs: number; score: number }[]   // for the chart + "first to final score"
+  scoreHistory: { matchTimeMs: number; score: number }[] // for the chart + "first to final score"
 }
 ```
 
 Key rules in the reducer:
+
 - **Callouts are derived, not stored.** If a variant is added to an event afterwards, its callouts appear when the state is recomputed. Drink stats come for free.
 - **End of play:** the first effective `objective.completed` with `endsMatch`, `match.timeExpired`, or `match.endedByHost`. Effective events after the end are ignored. The server rejects new ones anyway.
 - **Result:** compare scores. On a tie, run the ruleset's tiebreakers in order. If none decides, or a `manual` tiebreaker is reached, the status becomes `tiebreaker` until `tiebreaker.resolved` arrives.
@@ -261,18 +286,22 @@ Key rules in the reducer:
 
 ## 5. Brackets (`packages/shared/bracket`)
 
-- **Stored:** the bracket *structure*, generated once when the tournament is created. It's a list of nodes:
+- **Stored:** the bracket _structure_, generated once when the tournament is created. It's a list of nodes:
 
   ```ts
   type BracketNode = {
     id: string
     round: number
-    side: "winners" | "losers" | "final" | "thirdPlace"
+    side: 'winners' | 'losers' | 'final' | 'thirdPlace'
     slots: [Source, Source]
     matchId?: string
   }
-  type Source = { kind: "seed"; seed: number } | { kind: "winnerOf" | "loserOf"; nodeId: string } | { kind: "bye" }
+  type Source =
+    | { kind: 'seed'; seed: number }
+    | { kind: 'winnerOf' | 'loserOf'; nodeId: string }
+    | { kind: 'bye' }
   ```
+
 - **Derived:** who is actually in each slot, computed from the structure plus the match results. A corrected result therefore updates the bracket automatically. If a downstream match has already started, the server refuses to change the result, and the host sees a warning (per the feature spec).
 - **Generation:**
   - Pad to the next power of two with byes.
@@ -285,13 +314,13 @@ Key rules in the reducer:
 
 ## 6. Database (SQLite + Drizzle)
 
-| Table | Columns (main) | Notes |
-|---|---|---|
-| `players` | `id`, `name`, `color`, `created_at` | |
-| `rulesets` | `id`, `name`, `definition` (JSON), `updated_at` | The full `Ruleset` document, validated with Zod when read and written |
-| `tournaments` | `id`, `name`, `format` (JSON), `default_ruleset_id`, `seeding` (JSON), `bracket` (JSON), `created_at` | |
-| `matches` | `id`, `tournament_id?`, `bracket_node_id?`, `player1_id`, `player2_id`, `player_setup` (JSON: class, gift), `ruleset_snapshot` (JSON), `status`, `winner_slot?`, `score1`, `score2`, `created_at`, `finished_at?` | The `status`/score columns are a **cache** for list views, rewritten after every command |
-| `match_events` | `match_id`, `seq`, `at`, `match_time_ms`, `body` (JSON) | Primary key `(match_id, seq)`. Append-only. |
+| Table          | Columns (main)                                                                                                                                                                                                    | Notes                                                                                    |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `players`      | `id`, `name`, `color`, `created_at`                                                                                                                                                                               |                                                                                          |
+| `rulesets`     | `id`, `name`, `definition` (JSON), `updated_at`                                                                                                                                                                   | The full `Ruleset` document, validated with Zod when read and written                    |
+| `tournaments`  | `id`, `name`, `format` (JSON), `default_ruleset_id`, `seeding` (JSON), `bracket` (JSON), `created_at`                                                                                                             |                                                                                          |
+| `matches`      | `id`, `tournament_id?`, `bracket_node_id?`, `player1_id`, `player2_id`, `player_setup` (JSON: class, gift), `ruleset_snapshot` (JSON), `status`, `winner_slot?`, `score1`, `score2`, `created_at`, `finished_at?` | The `status`/score columns are a **cache** for list views, rewritten after every command |
+| `match_events` | `match_id`, `seq`, `at`, `match_time_ms`, `body` (JSON)                                                                                                                                                           | Primary key `(match_id, seq)`. Append-only.                                              |
 
 - **Why store rulesets as JSON documents?** A ruleset is a nested tree (objectives → variants → callouts) that is always read and written as a whole. Splitting it into 6 tables would add a lot of code for no benefit at this scale.
 - **Transactions:** a command is handled in one synchronous SQLite transaction: load events → `decide` → insert events → update the cached columns. Node runs our code on one thread and better-sqlite3 is synchronous, so commands for a match can never interleave.
@@ -305,16 +334,16 @@ Key rules in the reducer:
 
 ### 7.1 REST (JSON over HTTP, under `/api`)
 
-| Method & path | Purpose |
-|---|---|
-| `GET/POST /players`, `PATCH/DELETE /players/:id` | Player CRUD |
-| `GET/POST /rulesets`, `GET/PUT/DELETE /rulesets/:id`, `POST /rulesets/:id/duplicate` | Ruleset CRUD |
-| `GET/POST /tournaments`, `GET /tournaments/:id` | Tournaments, with the resolved bracket |
-| `POST /tournaments/:id/nodes/:nodeId/match` | Create or open the match for a bracket node |
-| `GET/POST /matches`, `GET /matches/:id` | List and create matches. `GET` returns the ruleset snapshot + all events. |
-| `POST /matches/:id/commands` | Send a command. Returns `200 { events }` or `409 { error }`. |
-| `GET /stats/players`, `GET /stats/rulesets/:id`, `GET /stats/drinks` | Aggregated statistics |
-| `GET /export` | Full JSON export |
+| Method & path                                                                        | Purpose                                                                   |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| `GET/POST /players`, `PATCH/DELETE /players/:id`                                     | Player CRUD                                                               |
+| `GET/POST /rulesets`, `GET/PUT/DELETE /rulesets/:id`, `POST /rulesets/:id/duplicate` | Ruleset CRUD                                                              |
+| `GET/POST /tournaments`, `GET /tournaments/:id`                                      | Tournaments, with the resolved bracket                                    |
+| `POST /tournaments/:id/nodes/:nodeId/match`                                          | Create or open the match for a bracket node                               |
+| `GET/POST /matches`, `GET /matches/:id`                                              | List and create matches. `GET` returns the ruleset snapshot + all events. |
+| `POST /matches/:id/commands`                                                         | Send a command. Returns `200 { events }` or `409 { error }`.              |
+| `GET /stats/players`, `GET /stats/rulesets/:id`, `GET /stats/drinks`                 | Aggregated statistics                                                     |
+| `GET /export`                                                                        | Full JSON export                                                          |
 
 Commands use REST instead of the WebSocket because a request/response pair gives the host a clear success or error for each click. The WebSocket is only for pushing updates out.
 
@@ -341,17 +370,17 @@ Commands use REST instead of the WebSocket because a request/response pair gives
 
 ### 8.1 Routes
 
-| Path | Screen |
-|---|---|
-| `/` | Home: live and recent matches, tournaments, quick "New match" |
-| `/players` | Player management |
-| `/rulesets`, `/rulesets/:id` | Ruleset list and editor |
-| `/tournaments/new`, `/tournaments/:id` | Tournament creation and bracket view |
-| `/matches/new` | Standalone match setup |
-| `/matches/:id/host` | **Host console** (the combined view in v1) |
-| `/matches/:id/view` | Spectator view, read-only, built in v1 but optional to use |
-| `/matches/:id` | Match summary: timeline and score chart |
-| `/stats` | Statistics |
+| Path                                   | Screen                                                        |
+| -------------------------------------- | ------------------------------------------------------------- |
+| `/`                                    | Home: live and recent matches, tournaments, quick "New match" |
+| `/players`                             | Player management                                             |
+| `/rulesets`, `/rulesets/:id`           | Ruleset list and editor                                       |
+| `/tournaments/new`, `/tournaments/:id` | Tournament creation and bracket view                          |
+| `/matches/new`                         | Standalone match setup                                        |
+| `/matches/:id/host`                    | **Host console** (the combined view in v1)                    |
+| `/matches/:id/view`                    | Spectator view, read-only, built in v1 but optional to use    |
+| `/matches/:id`                         | Match summary: timeline and score chart                       |
+| `/stats`                               | Statistics                                                    |
 
 ### 8.2 Live match store
 
@@ -409,6 +438,7 @@ npm start            # production server, serving the built web app
 - **Formatting and lint:** Prettier + ESLint, with defaults kept minimal.
 
 ### Testing strategy
+
 - **Reducer and `decide()`:** thorough unit tests. This is where the game rules live, and it's pure functions, which are easy to test. Cases: once-only vs repeatable and max count, ending objectives, time expiry, undo of the ending objective, variants with replace/add, tag callouts, each tiebreaker, and logging while paused.
 - **Bracket generation:** tests for 2–16 players, byes, third place, and double elimination.
 - **Server:** a few API tests using Fastify's built-in `inject` (no real network) against a temporary SQLite file.
@@ -421,10 +451,12 @@ npm start            # production server, serving the built web app
 **Container:** a multi-stage `Dockerfile`. One stage builds everything, and a slim Node runtime stage holds the built app plus the `litestream` binary.
 
 **Startup (entrypoint):**
+
 1. `litestream restore -if-replica-exists data/tournament.db`, which pulls the latest copy from Cloud Storage.
 2. `litestream replicate -exec "node apps/server/dist/index.js"`, which runs the app while continuously replicating changes.
 
 **Cloud Run settings:**
+
 - `--max-instances=1`. One writer for SQLite, and the in-memory WebSocket hub stays correct.
 - `--min-instances=0` normally, and `1` on tournament day to avoid cold starts.
 - **CPU always allocated** (instance-based billing), so Litestream can replicate in the background between requests.
@@ -441,26 +473,26 @@ npm start            # production server, serving the built web app
 
 ## 12. Milestones
 
-| # | Milestone | Done when |
-|---|---|---|
-| M0 | Scaffold | Monorepo, `npm run dev` shows a page talking to the server, CI-free lint and tests run |
-| M1 | Domain core | Ruleset schema, events, `decide`, reducer, clock math, and the "Bell Rush" seed. Heavily unit-tested. |
-| M2 | Server | DB schema and migrations, REST, command handling, WebSocket hub, clock service |
-| M3 | **Playable match** | Create a standalone match (two players, seed ruleset) and run it end to end in the host console: shortcuts, undo, variants, callout banners, tiebreaker mode. *A test evening with friends could be held at this point.* |
-| M4 | Editors | Player management and the ruleset editor |
-| M5 | Tournaments | Bracket generation (single/double elimination, third place), bracket view, auto-advancement |
-| M6 | History and stats | Match summary with timeline and chart, stats page including drinks |
-| M7 | Polish | Dark Souls theming, banners and animations, spectator view, JSON export |
-| M8 | Deploy | Dockerfile, Litestream, Cloud Run |
+| #   | Milestone          | Done when                                                                                                                                                                                                                |
+| --- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| M0  | Scaffold           | Monorepo, `npm run dev` shows a page talking to the server, CI-free lint and tests run                                                                                                                                   |
+| M1  | Domain core        | Ruleset schema, events, `decide`, reducer, clock math, and the "Bell Rush" seed. Heavily unit-tested.                                                                                                                    |
+| M2  | Server             | DB schema and migrations, REST, command handling, WebSocket hub, clock service                                                                                                                                           |
+| M3  | **Playable match** | Create a standalone match (two players, seed ruleset) and run it end to end in the host console: shortcuts, undo, variants, callout banners, tiebreaker mode. _A test evening with friends could be held at this point._ |
+| M4  | Editors            | Player management and the ruleset editor                                                                                                                                                                                 |
+| M5  | Tournaments        | Bracket generation (single/double elimination, third place), bracket view, auto-advancement                                                                                                                              |
+| M6  | History and stats  | Match summary with timeline and chart, stats page including drinks                                                                                                                                                       |
+| M7  | Polish             | Dark Souls theming, banners and animations, spectator view, JSON export                                                                                                                                                  |
+| M8  | Deploy             | Dockerfile, Litestream, Cloud Run                                                                                                                                                                                        |
 
 ---
 
 ## 13. Decisions log
 
-| # | Decision |
-|---|---|
-| 1 | Double elimination: a grand final reset is an option when creating the tournament, defaulting to no reset. |
-| 2 | Display font: Optimus Princeps (free), self-hosted. |
+| #   | Decision                                                                                                   |
+| --- | ---------------------------------------------------------------------------------------------------------- |
+| 1   | Double elimination: a grand final reset is an option when creating the tournament, defaulting to no reset. |
+| 2   | Display font: Optimus Princeps (free), self-hosted.                                                        |
 
 No open questions at the moment.
 
@@ -468,26 +500,26 @@ No open questions at the moment.
 
 ## Glossary
 
-| Term | Meaning |
-|---|---|
-| **API** | The set of URLs the frontend calls to talk to the backend. |
-| **REST** | A convention for APIs: resources at URLs (`/players/42`) manipulated with HTTP methods (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`). |
-| **WebSocket** | A long-lived two-way connection between browser and server, used here so the server can push new events instantly. |
-| **Event sourcing** | Storing *what happened* (events) instead of *the current state*. The state is computed by replaying events. This gives undo, timelines and sync almost for free. |
-| **Command vs event** | A command is a request ("log a death for P1") that can be rejected. An event is a fact that has been accepted ("P1 died at 12:34"). |
-| **Reducer** | A pure function `(state, event) → newState`. Folding it over all events gives the current state. |
-| **Pure function** | Its output depends only on its input, with no side effects. Easy to test and safe to run anywhere. |
-| **Monorepo / workspaces** | Several packages (web, server, shared) in one repository, linked by npm so they can import each other. |
-| **Vite** | A dev server and bundler. It serves your code instantly while developing, and bundles it into static files for production. |
-| **Bundle** | The optimised JS/CSS files the browser downloads. |
-| **ORM** (Drizzle) | A library that maps database tables to typed code, so you write `db.select().from(players)` instead of raw SQL strings (raw SQL is still available). |
-| **Migration** | A versioned script that changes the database schema, such as adding a column, applied in order. |
-| **Zod schema** | A runtime description of a data shape. It validates untrusted input (API requests, JSON from the DB) and also generates the TypeScript type. |
-| **CSS Modules** | CSS files whose class names are scoped to one component, so styles don't leak. |
-| **Design tokens** | Named design values (colours, spacing) defined once as CSS variables and used everywhere. |
-| **Container / Docker image** | The app plus its runtime, packaged as one portable unit. |
-| **Cloud Run** | Google's managed service that runs containers. It scales up and down (to zero) with no servers to maintain. |
-| **Cold start** | The delay when Cloud Run has to start a container because none is running. |
-| **Litestream** | A tool that continuously copies a SQLite database to cloud storage and restores it on startup. |
-| **Optimistic update** | Updating the UI immediately, before the server confirms, then reconciling. |
-| **CDN** | A network that serves static files such as fonts and libraries. We avoid relying on one at runtime so the app works offline. |
+| Term                         | Meaning                                                                                                                                                          |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **API**                      | The set of URLs the frontend calls to talk to the backend.                                                                                                       |
+| **REST**                     | A convention for APIs: resources at URLs (`/players/42`) manipulated with HTTP methods (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`).                                |
+| **WebSocket**                | A long-lived two-way connection between browser and server, used here so the server can push new events instantly.                                               |
+| **Event sourcing**           | Storing _what happened_ (events) instead of _the current state_. The state is computed by replaying events. This gives undo, timelines and sync almost for free. |
+| **Command vs event**         | A command is a request ("log a death for P1") that can be rejected. An event is a fact that has been accepted ("P1 died at 12:34").                              |
+| **Reducer**                  | A pure function `(state, event) → newState`. Folding it over all events gives the current state.                                                                 |
+| **Pure function**            | Its output depends only on its input, with no side effects. Easy to test and safe to run anywhere.                                                               |
+| **Monorepo / workspaces**    | Several packages (web, server, shared) in one repository, linked by npm so they can import each other.                                                           |
+| **Vite**                     | A dev server and bundler. It serves your code instantly while developing, and bundles it into static files for production.                                       |
+| **Bundle**                   | The optimised JS/CSS files the browser downloads.                                                                                                                |
+| **ORM** (Drizzle)            | A library that maps database tables to typed code, so you write `db.select().from(players)` instead of raw SQL strings (raw SQL is still available).             |
+| **Migration**                | A versioned script that changes the database schema, such as adding a column, applied in order.                                                                  |
+| **Zod schema**               | A runtime description of a data shape. It validates untrusted input (API requests, JSON from the DB) and also generates the TypeScript type.                     |
+| **CSS Modules**              | CSS files whose class names are scoped to one component, so styles don't leak.                                                                                   |
+| **Design tokens**            | Named design values (colours, spacing) defined once as CSS variables and used everywhere.                                                                        |
+| **Container / Docker image** | The app plus its runtime, packaged as one portable unit.                                                                                                         |
+| **Cloud Run**                | Google's managed service that runs containers. It scales up and down (to zero) with no servers to maintain.                                                      |
+| **Cold start**               | The delay when Cloud Run has to start a container because none is running.                                                                                       |
+| **Litestream**               | A tool that continuously copies a SQLite database to cloud storage and restores it on startup.                                                                   |
+| **Optimistic update**        | Updating the UI immediately, before the server confirms, then reconciling.                                                                                       |
+| **CDN**                      | A network that serves static files such as fonts and libraries. We avoid relying on one at runtime so the app works offline.                                     |

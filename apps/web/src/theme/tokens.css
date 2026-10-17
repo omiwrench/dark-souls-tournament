@@ -1,0 +1,26 @@
+:root {
+  color-scheme: dark;
+
+  --color-bg: #0e0d0c;
+  --color-surface: #1a1816;
+  --color-border: #3a352f;
+  --color-text: #e9e1d0;
+  --color-text-muted: #9a917f;
+  --color-ember: #e8742a;
+  --color-ember-glow: rgb(232 116 42 / 45%);
+  --color-player-1: #c9a227;
+  --color-player-2: #6f9fd8;
+  --color-danger: #b3261e;
+
+  /* Optimus Princeps is self-hosted in M7; serif fallback until then. */
+  --font-display: 'Optimus Princeps', 'Cinzel', Georgia, serif;
+  --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 40px;
+
+  --radius: 6px;
+}
