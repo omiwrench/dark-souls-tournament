@@ -5,8 +5,12 @@ import { PlayerInputSchema, PlayerPatchSchema, type PlayerRecord } from '@dst/sh
 import type { Db } from '../db/client'
 import { matches, players } from '../db/schema'
 import { HttpError, notFound, parse } from '../http/errors'
+import type { TournamentService } from '../services/tournament-service'
 
-export function playerRoutes(app: FastifyInstance, { db, now }: { db: Db; now: () => number }) {
+export function playerRoutes(
+  app: FastifyInstance,
+  { db, now, tournaments }: { db: Db; now: () => number; tournaments: TournamentService },
+) {
   app.get('/api/players', async (): Promise<PlayerRecord[]> =>
     db.select().from(players).orderBy(asc(players.name)).all(),
   )
@@ -38,6 +42,9 @@ export function playerRoutes(app: FastifyInstance, { db, now }: { db: Db; now: (
       .limit(1)
       .get()
     if (played) throw new HttpError(409, 'in_use', 'This player has matches and cannot be deleted')
+    if (tournaments.isPlayerSeeded(id)) {
+      throw new HttpError(409, 'in_use', 'This player is in a tournament and cannot be deleted')
+    }
     if (db.delete(players).where(eq(players.id, id)).run().changes === 0) throw notFound('Player')
     reply.code(204)
   })

@@ -8,6 +8,9 @@ import type {
   Ruleset,
   RulesetRecord,
   RulesetSummary,
+  CreateTournamentInput,
+  TournamentDetail,
+  TournamentSummary,
 } from '@dst/shared'
 import { api } from './client'
 
@@ -15,6 +18,7 @@ export const queryKeys = {
   players: ['players'] as const,
   rulesets: ['rulesets'] as const,
   matches: ['matches'] as const,
+  tournaments: ['tournaments'] as const,
 }
 
 export function usePlayers() {
@@ -119,5 +123,47 @@ export function useDeleteMatch() {
   return useMutation({
     mutationFn: (id: string) => api<void>('DELETE', `/matches/${id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.matches }),
+  })
+}
+
+export function useTournaments() {
+  return useQuery({
+    queryKey: queryKeys.tournaments,
+    queryFn: () => api<TournamentSummary[]>('GET', '/tournaments'),
+  })
+}
+
+export function useTournament(id: string) {
+  return useQuery({
+    queryKey: [...queryKeys.tournaments, id],
+    queryFn: () => api<TournamentDetail>('GET', `/tournaments/${id}`),
+  })
+}
+
+export function useCreateTournament() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: CreateTournamentInput) =>
+      api<TournamentDetail>('POST', '/tournaments', input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.tournaments }),
+  })
+}
+
+export function useDeleteTournament() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api<void>('DELETE', `/tournaments/${id}`),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tournaments })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.matches })
+    },
+  })
+}
+
+/** Creates (or fetches) the match for a bracket node. */
+export function useOpenNodeMatch(tournamentId: string) {
+  return useMutation({
+    mutationFn: (nodeId: string) =>
+      api<MatchDetail>('POST', `/tournaments/${tournamentId}/nodes/${nodeId}/match`, {}),
   })
 }

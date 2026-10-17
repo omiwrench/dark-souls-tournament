@@ -3,6 +3,7 @@ import { CommandSchema } from '../match/commands'
 import { type MatchEvent, MatchEventSchema, type PlayerSlot } from '../match/events'
 import { type Ruleset, RulesetSchema } from '../ruleset/schema'
 import { DS1_CLASSES, DS1_GIFTS } from '../ds1'
+import { type Bracket, type BracketFormat, BracketFormatSchema } from '../bracket/generate'
 
 // Request bodies (validated by the server)
 
@@ -44,6 +45,23 @@ export const CreateMatchSchema = z
   .refine((m) => m.player1Id !== m.player2Id, 'A player cannot play against themselves')
 export type CreateMatchInput = z.input<typeof CreateMatchSchema>
 
+export const CreateTournamentSchema = z.object({
+  name: z.string().trim().min(1).max(60),
+  rulesetId: z.string().min(1),
+  /** In seed order when `seeding` is `manual`. */
+  playerIds: z
+    .array(z.string().min(1))
+    .min(2, 'A tournament needs at least two players')
+    .refine((ids) => new Set(ids).size === ids.length, 'Each player can only be added once'),
+  seeding: z.enum(['random', 'manual']),
+  format: BracketFormatSchema,
+})
+export type CreateTournamentInput = z.input<typeof CreateTournamentSchema>
+
+export const CreateNodeMatchSchema = z.object({
+  playerSetup: z.tuple([PlayerSetupSchema, PlayerSetupSchema]).default([{}, {}]),
+})
+
 export { CommandSchema }
 
 // Responses
@@ -65,6 +83,7 @@ export type CachedMatchStatus = 'ready' | 'live' | 'paused' | 'tiebreaker' | 'fi
 export type MatchSummary = {
   id: string
   tournamentId: string | null
+  bracketNodeId: string | null
   players: [PlayerRecord, PlayerRecord]
   rulesetName: string
   status: CachedMatchStatus
@@ -78,6 +97,24 @@ export type MatchDetail = MatchSummary & {
   playerSetup: [PlayerSetup, PlayerSetup]
   ruleset: Ruleset
   events: MatchEvent[]
+}
+
+export type TournamentSummary = {
+  id: string
+  name: string
+  format: BracketFormat
+  rulesetName: string
+  playerCount: number
+  champion: PlayerRecord | null
+  createdAt: string
+}
+
+export type TournamentDetail = Omit<TournamentSummary, 'playerCount'> & {
+  rulesetId: string
+  /** Players in seed order, best seed first. */
+  seeding: PlayerRecord[]
+  bracket: Bracket
+  matches: MatchSummary[]
 }
 
 export type CommandResponse = { events: MatchEvent[] }

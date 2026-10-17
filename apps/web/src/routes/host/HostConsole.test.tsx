@@ -17,6 +17,7 @@ function render(play: (h: ReturnType<typeof createHarness>) => void) {
   const detail: MatchDetail = {
     id: 'm',
     tournamentId: null,
+    bracketNodeId: null,
     players,
     rulesetName: bellRush.name,
     status: state.status,

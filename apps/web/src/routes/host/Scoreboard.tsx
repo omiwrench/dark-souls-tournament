@@ -58,7 +58,11 @@ export function Scoreboard() {
           )}
         </div>
         <div className={s.controls}>
-          <Link to="/" className={s.homeLink} title="Back to matches">
+          <Link
+            to={detail.tournamentId ? `/tournaments/${detail.tournamentId}` : '/'}
+            className={s.homeLink}
+            title={detail.tournamentId ? 'Back to the bracket' : 'Back to matches'}
+          >
             ←
           </Link>
           {status === 'ready' && (

@@ -1,0 +1,339 @@
+.page,
+.form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.form {
+  max-width: 760px;
+}
+
+.heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.back {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.newButton {
+  background: var(--color-ember);
+  color: #1a0f08;
+  font-weight: 600;
+  text-decoration: none;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius);
+}
+
+.newButton:hover {
+  background: var(--color-ember-strong);
+}
+
+.muted {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.error {
+  color: var(--color-danger);
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.grow {
+  flex: 1;
+}
+
+/* List */
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.listLink {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: inherit;
+  text-decoration: none;
+}
+
+.listLink:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-raised);
+}
+
+.listName {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+}
+
+.champion {
+  color: var(--color-gold);
+}
+
+/* Form */
+
+.twoColumns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4);
+}
+
+.box {
+  display: grid;
+  gap: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  margin: 0;
+  background: var(--color-surface);
+}
+
+.box legend {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  padding: 0 var(--space-2);
+}
+
+.options {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.option > span {
+  display: grid;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.playerPicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.playerChip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.playerChip:has(input:checked) {
+  border-color: var(--color-ember);
+  background: rgb(232 116 42 / 12%);
+}
+
+.addPlayer {
+  display: flex;
+  gap: var(--space-2);
+  max-width: 360px;
+}
+
+.addPlayer input {
+  flex: 1;
+}
+
+.seedList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-1);
+  max-width: 360px;
+}
+
+.seedList li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.seedList button {
+  padding: 2px var(--space-2);
+}
+
+/* Champion */
+
+.championBanner {
+  text-align: center;
+  padding: var(--space-5);
+  border: 1px solid var(--color-gold);
+  border-radius: var(--radius-lg);
+  background: radial-gradient(circle at top, rgb(217 180 90 / 15%), var(--color-surface));
+}
+
+.championTitle {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--color-gold);
+}
+
+.championName {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+}
+
+.placements {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  gap: var(--space-5);
+  color: var(--color-text-muted);
+}
+
+/* Bracket */
+
+.bracketSection {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.sectionTitle {
+  font-size: 1.3rem;
+}
+
+.rounds {
+  display: flex;
+  gap: var(--space-4);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+.round {
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+  flex: 0 0 220px;
+}
+
+.roundTitle {
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-faint);
+  margin-bottom: var(--space-2);
+}
+
+/* Spread later rounds out so they line up between the matches feeding them. */
+.roundNodes {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: var(--space-3);
+}
+
+.node {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.ready {
+  border-color: var(--color-ember);
+}
+
+.playing {
+  border-color: var(--color-gold);
+}
+
+.walkover,
+.skipped,
+.waiting {
+  opacity: 0.6;
+}
+
+.entrant {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.seed {
+  min-width: 1.4em;
+  font-size: 0.75rem;
+  color: var(--color-text-faint);
+  text-align: right;
+}
+
+.entrantName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entrantScore {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.won .entrantName,
+.won .entrantScore {
+  color: var(--color-gold);
+  font-weight: 600;
+}
+
+.lost {
+  opacity: 0.55;
+}
+
+.nodeFooter {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-1) var(--space-2);
+  min-height: 34px;
+  align-items: center;
+}
+
+.nodeFooter button {
+  padding: 2px var(--space-3);
+  font-size: 0.85rem;
+}
+
+.linkButton {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-text-muted);
+}
+
+.liveDot {
+  color: var(--color-ember);
+}

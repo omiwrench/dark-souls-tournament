@@ -13,6 +13,7 @@ export function Layout() {
             Matches
           </NavLink>
           <NavLink to="/matches/new">New match</NavLink>
+          <NavLink to="/tournaments">Tournaments</NavLink>
           <NavLink to="/players">Players</NavLink>
           <NavLink to="/rulesets">Rulesets</NavLink>
         </nav>

@@ -1,5 +1,5 @@
 import { index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
-import type { CachedMatchStatus, EventBody, PlayerSetup, Ruleset } from '@dst/shared'
+import type { Bracket, CachedMatchStatus, EventBody, PlayerSetup, Ruleset } from '@dst/shared'
 
 export const players = sqliteTable('players', {
   id: text('id').primaryKey(),
@@ -62,3 +62,15 @@ export const matchEvents = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.matchId, t.seq] })],
 )
+
+export const tournaments = sqliteTable('tournaments', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  /** New bracket matches use the current version of this ruleset. */
+  rulesetId: text('ruleset_id').notNull(),
+  /** Player ids, best seed first. */
+  seeding: text('seeding', { mode: 'json' }).$type<string[]>().notNull(),
+  /** Generated once at creation; who plays whom is resolved from match results. */
+  bracket: text('bracket', { mode: 'json' }).$type<Bracket>().notNull(),
+  createdAt: text('created_at').notNull(),
+})

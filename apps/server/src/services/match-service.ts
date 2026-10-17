@@ -14,13 +14,14 @@ import {
   type PlayerRecord,
   checkExpiry,
   decide,
+  dependentsOf,
   msUntilExpiry,
   reduceMatch,
   validateRuleset,
 } from '@dst/shared'
 import type { z } from 'zod'
 import type { Db } from '../db/client'
-import { matchEvents, matches, players, rulesets } from '../db/schema'
+import { matchEvents, matches, players, rulesets, tournaments } from '../db/schema'
 import { HttpError, notFound } from '../http/errors'
 import type { Hub } from '../ws/hub'
 
@@ -108,10 +109,26 @@ export class MatchService {
   }
 
   delete(id: string) {
-    const result = this.db.delete(matches).where(eq(matches.id, id)).run()
-    if (result.changes === 0) throw notFound('Match')
+    this.db.transaction((tx) => {
+      const row = tx.select().from(matches).where(eq(matches.id, id)).get()
+      if (!row) throw notFound('Match')
+      // Deleting a bracket match takes its result away, just like an undo would.
+      if (row.status === 'finished') this.releaseDependents(tx, row)
+      tx.delete(matches).where(eq(matches.id, id)).run()
+    })
     this.clearTimer(id)
     this.hub.publish('matches', { type: 'matches.changed' })
+  }
+
+  /** Removes all of a tournament's matches, without any bracket checks. */
+  deleteForTournament(tournamentId: string) {
+    const ids = this.db
+      .delete(matches)
+      .where(eq(matches.tournamentId, tournamentId))
+      .returning({ id: matches.id })
+      .all()
+    for (const { id } of ids) this.clearTimer(id)
+    if (ids.length) this.hub.publish('matches', { type: 'matches.changed' })
   }
 
   /** Runs a host command. Throws a 409 with the reason when the command is rejected. */
@@ -183,12 +200,19 @@ export class MatchService {
         finishedAt:
           state.status === 'finished' ? (row.finishedAt ?? new Date(now).toISOString()) : null,
       }
-      const cacheChanged =
+      let cacheChanged =
         cache.status !== row.status ||
         cache.winnerSlot !== row.winnerSlot ||
         cache.score1 !== row.score1 ||
         cache.score2 !== row.score2
       if (appended.length) tx.update(matches).set(cache).where(eq(matches.id, id)).run()
+
+      const resultChanged =
+        (row.status === 'finished') !== (cache.status === 'finished') ||
+        (cache.status === 'finished' && row.winnerSlot !== cache.winnerSlot)
+      if (appended.length && resultChanged && this.releaseDependents(tx, row).length) {
+        cacheChanged = true
+      }
 
       return {
         appended,
@@ -208,6 +232,48 @@ export class MatchService {
     if (outcome.cacheChanged) this.hub.publish('matches', { type: 'matches.changed' })
     this.schedule(id, outcome.state)
     return outcome
+  }
+
+  /**
+   * A bracket match's result decides who plays the later matches. When it changes,
+   * later matches that haven't started are removed, to be re-created with the right
+   * players. If one has started, the result is locked and the change is refused.
+   */
+  private releaseDependents(tx: Tx, row: MatchRow): string[] {
+    if (!row.tournamentId || !row.bracketNodeId) return []
+    const tournament = tx
+      .select({ bracket: tournaments.bracket })
+      .from(tournaments)
+      .where(eq(tournaments.id, row.tournamentId))
+      .get()
+    if (!tournament) return []
+    const nodeIds = dependentsOf(tournament.bracket, row.bracketNodeId).map((n) => n.id)
+    if (!nodeIds.length) return []
+    const later = tx
+      .select({ id: matches.id, status: matches.status })
+      .from(matches)
+      .where(
+        and(eq(matches.tournamentId, row.tournamentId), inArray(matches.bracketNodeId, nodeIds)),
+      )
+      .all()
+    if (later.some((m) => m.status !== 'ready')) {
+      throw new HttpError(
+        409,
+        'bracket_locked',
+        'A later match in the bracket has already started, so this result can no longer change',
+      )
+    }
+    if (later.length) {
+      tx.delete(matches)
+        .where(
+          inArray(
+            matches.id,
+            later.map((m) => m.id),
+          ),
+        )
+        .run()
+    }
+    return later.map((m) => m.id)
   }
 
   private schedule(id: string, state: MatchState) {
@@ -261,6 +327,7 @@ function toSummary(row: MatchRow, playersById: Map<string, PlayerRecord>): Match
   return {
     id: row.id,
     tournamentId: row.tournamentId,
+    bracketNodeId: row.bracketNodeId,
     players: [playersById.get(row.player1Id)!, playersById.get(row.player2Id)!],
     rulesetName: row.rulesetSnapshot.name,
     status: row.status,

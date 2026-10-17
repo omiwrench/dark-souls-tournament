@@ -9,7 +9,9 @@ import { registerErrorHandler } from './http/errors'
 import { matchRoutes } from './routes/matches'
 import { playerRoutes } from './routes/players'
 import { rulesetRoutes } from './routes/rulesets'
+import { tournamentRoutes } from './routes/tournaments'
 import { MatchService } from './services/match-service'
+import { TournamentService } from './services/tournament-service'
 import { Hub } from './ws/hub'
 import { wsRoutes } from './ws/routes'
 
@@ -38,6 +40,7 @@ export async function buildApp({
   seed(db, new Date(now()))
   const hub = new Hub()
   const matches = new MatchService(db, hub, now, app.log)
+  const tournaments = new TournamentService(db, matches, hub, now)
   app.addHook('onClose', async () => {
     matches.close()
     db.$client.close()
@@ -50,9 +53,10 @@ export async function buildApp({
     name: APP_NAME,
     serverTime: new Date(now()).toISOString(),
   }))
-  playerRoutes(app, { db, now })
+  playerRoutes(app, { db, now, tournaments })
   rulesetRoutes(app, { db, now })
   matchRoutes(app, { matches })
+  tournamentRoutes(app, { tournaments })
   wsRoutes(app, { hub, matches, now })
 
   if (webDistDir && existsSync(webDistDir)) {

@@ -8,6 +8,9 @@ import { NewMatch } from './routes/NewMatch'
 import { Players } from './routes/Players'
 import { RulesetEditorPage } from './routes/rulesets/RulesetEditor'
 import { RulesetList } from './routes/rulesets/RulesetList'
+import { NewTournament } from './routes/tournaments/NewTournament'
+import { TournamentList } from './routes/tournaments/TournamentList'
+import { TournamentPage } from './routes/tournaments/TournamentPage'
 import { HostConsole } from './routes/host/HostConsole'
 import './theme/tokens.css'
 import './theme/global.css'
@@ -20,6 +23,9 @@ const router = createBrowserRouter([
     children: [
       { path: '/', element: <Home /> },
       { path: '/matches/new', element: <NewMatch /> },
+      { path: '/tournaments', element: <TournamentList /> },
+      { path: '/tournaments/new', element: <NewTournament /> },
+      { path: '/tournaments/:id', element: <TournamentPage /> },
       { path: '/players', element: <Players /> },
       { path: '/rulesets', element: <RulesetList /> },
       { path: '/rulesets/new', element: <RulesetEditorPage /> },
