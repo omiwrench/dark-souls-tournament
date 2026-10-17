@@ -29,14 +29,14 @@ Praise the Sun! \[T]/
 
 ## 🕯️ Status
 
-**Bonfire lit.** The project scaffold is up; the game rules come next.
+**Bonfire lit.** The game rules engine is done and tested; the server comes next.
 
 | Milestone                                | Status |
 | ---------------------------------------- | ------ |
 | Feature & tech specs                     | ✅     |
 | M0: Scaffold                             | ✅     |
-| M1: Domain core (rules, events, scoring) | ⏳     |
-| M2: Server                               |        |
+| M1: Domain core (rules, events, scoring) | ✅     |
+| M2: Server                               | ⏳     |
 | M3: Playable match                       |        |
 | M4: Editors                              |        |
 | M5: Tournaments & brackets               |        |

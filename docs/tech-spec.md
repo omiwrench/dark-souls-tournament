@@ -1,6 +1,6 @@
 # Tech Spec: Dark Souls Tournament Tracker
 
-> Status: **Draft v0.2**. A living document. Update it as the implementation evolves.
+> Status: **Draft v0.3**. A living document. Update it as the implementation evolves.
 > Companion to [`feature-spec.md`](./feature-spec.md). It covers _how_ we build what that document describes.
 > New to web development? See the [Glossary](#glossary) at the bottom.
 
@@ -108,7 +108,7 @@ type Ruleset = {
   timeLimitMs: number | null // null = no time limit
   categories: { id: string; name: string }[]
   objectives: Objective[]
-  deaths: { points: number; callouts: Callout[]; variants: Variant[] }
+  deaths: { deduction: number; callouts: Callout[]; variants: Variant[] }
   penalties: Penalty[]
   sideEvents: SideEvent[]
   tagCallouts: { tag: string; callouts: Callout[] }[]
@@ -139,7 +139,7 @@ type Variant = {
 type Penalty = {
   id: string
   name: string
-  points: number /* deduction, ≥ 0 */
+  deduction: number // ≥ 0; 0 = callouts only
   callouts: Callout[]
 }
 type SideEvent = { id: string; name: string; scope: 'player' | 'general'; callouts: Callout[] }
@@ -163,9 +163,12 @@ Notes:
 - IDs inside a ruleset (objectives, variants, and so on) are stable short strings, so events can refer to them. The editor generates them.
 - **A replace-mode variant only suppresses callouts attached to the event itself** (objective or death callouts). Tag callouts, such as "boss → everyone drinks", always fire.
 - **Drinks in stats:** `players` counts for both players. `everyone` counts for both players only, since spectators aren't tracked.
-- Validation rules that the schema can't express go in `validateRuleset()`. Examples: there must be at least one end condition, `endsMatch` objectives must be once-only, and IDs must be unique.
+- Validation rules that the schema can't express go in `validateRuleset()`. Examples: there must be at least one end condition, `endsMatch` objectives must be once-only, IDs must be unique, general side events can't target `actor`/`opponent`, and nothing may follow a `manual` tiebreaker.
+- `fewerPenalties` compares the _number_ of penalties, not the points deducted.
 
 ### 4.2 Match events (stored, append-only)
+
+The types in this section are summaries. The Zod schemas in `packages/shared/src` are the source of truth.
 
 ```ts
 type MatchEvent = {
@@ -183,7 +186,7 @@ type EventBody =
   | { type: 'clock.resumed' }
   | { type: 'objective.completed'; player: PlayerSlot; objectiveId: string; variantIds: string[] }
   | { type: 'death'; player: PlayerSlot; variantIds: string[] }
-  | { type: 'penalty'; player: PlayerSlot; penaltyId?: string; reason?: string; points: number }
+  | { type: 'penalty'; player: PlayerSlot; penaltyId?: string; reason?: string; deduction: number }
   | { type: 'sideEvent'; player?: PlayerSlot; sideEventId: string }
   | { type: 'match.timeExpired' }
   | { type: 'match.endedByHost'; reason?: string }
@@ -208,14 +211,15 @@ type Command =
   | { type: 'start'; countdownMs?: number }
   | { type: 'pause' }
   | { type: 'resume' }
+  // Logging commands take an optional `matchTimeMs` for backdating ("that was two minutes ago").
   | { type: 'completeObjective'; player: PlayerSlot; objectiveId: string; variantIds?: string[] }
   | { type: 'logDeath'; player: PlayerSlot; variantIds?: string[] }
   | {
       type: 'givePenalty'
       player: PlayerSlot
       penaltyId?: string
-      reason?: string
-      points?: number
+      reason?: string // required for ad-hoc penalties
+      deduction?: number // ad-hoc only; predefined penalties use the ruleset's value
     }
   | { type: 'logSideEvent'; player?: PlayerSlot; sideEventId: string }
   | { type: 'setVariants'; targetSeq: number; variantIds: string[] }
@@ -226,6 +230,13 @@ type Command =
 ```
 
 Examples of rejections: a once-only objective already completed, the max count reached, the match not live, an unknown ID, or undoing an event that is already voided.
+
+Timing rules for logging commands:
+
+- Rejected before the start and during the countdown.
+- Rejected once the time limit is reached. The server first appends any due expiry via `checkExpiry(state, now)`.
+- A backdated `matchTimeMs` can't be in the future.
+- **After the end**, only backdated events from strictly before the end are accepted. This lets the host add something they forgot to log, without reopening the match.
 
 ### 4.4 Derived match state (the reducer)
 
@@ -270,7 +281,8 @@ Key rules in the reducer:
 - **Callouts are derived, not stored.** If a variant is added to an event afterwards, its callouts appear when the state is recomputed. Drink stats come for free.
 - **End of play:** the first effective `objective.completed` with `endsMatch`, `match.timeExpired`, or `match.endedByHost`. Effective events after the end are ignored. The server rejects new ones anyway.
 - **Result:** compare scores. On a tie, run the ruleset's tiebreakers in order. If none decides, or a `manual` tiebreaker is reached, the status becomes `tiebreaker` until `tiebreaker.resolved` arrives.
-- **Undoing the match-ending objective** removes the end, and the status becomes `paused` at that match time. The host resumes manually.
+- **Undoing the match-ending objective** removes the end, and the status becomes `paused` at the time it was logged. The host resumes manually. (In the reducer, logging a match-ending objective always pauses the clock, and the end freezes it.)
+- **Robust against bad sequences:** if an amendment creates an impossible state, such as a once-only objective completed twice after moving an event to the other player, the extra event is kept in the timeline as `ignored` with a reason instead of being scored. The same applies to unknown IDs and events after the end.
 
 **Countdown** isn't a stored status. Any client computes "counting down" as `now < clock.startsAt`. Since `match.started` carries the countdown length, every screen shows the same 3-2-1.
 
