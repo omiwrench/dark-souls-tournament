@@ -29,15 +29,15 @@ Praise the Sun! \[T]/
 
 ## 🕯️ Status
 
-**Bonfire lit.** The game rules engine is done and tested; the server comes next.
+**Bonfire lit.** Rules engine and server are done; next up is the host console, the first playable match.
 
 | Milestone                                | Status |
 | ---------------------------------------- | ------ |
 | Feature & tech specs                     | ✅     |
 | M0: Scaffold                             | ✅     |
 | M1: Domain core (rules, events, scoring) | ✅     |
-| M2: Server                               | ⏳     |
-| M3: Playable match                       |        |
+| M2: Server                               | ✅     |
+| M3: Playable match                       | ⏳     |
 | M4: Editors                              |        |
 | M5: Tournaments & brackets               |        |
 | M6: History & stats                      |        |

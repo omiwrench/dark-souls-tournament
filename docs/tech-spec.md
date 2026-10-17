@@ -1,6 +1,6 @@
 # Tech Spec: Dark Souls Tournament Tracker
 
-> Status: **Draft v0.3**. A living document. Update it as the implementation evolves.
+> Status: **Draft v0.4**. A living document. Update it as the implementation evolves.
 > Companion to [`feature-spec.md`](./feature-spec.md). It covers _how_ we build what that document describes.
 > New to web development? See the [Glossary](#glossary) at the bottom.
 
@@ -326,13 +326,13 @@ Key rules in the reducer:
 
 ## 6. Database (SQLite + Drizzle)
 
-| Table          | Columns (main)                                                                                                                                                                                                    | Notes                                                                                    |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `players`      | `id`, `name`, `color`, `created_at`                                                                                                                                                                               |                                                                                          |
-| `rulesets`     | `id`, `name`, `definition` (JSON), `updated_at`                                                                                                                                                                   | The full `Ruleset` document, validated with Zod when read and written                    |
-| `tournaments`  | `id`, `name`, `format` (JSON), `default_ruleset_id`, `seeding` (JSON), `bracket` (JSON), `created_at`                                                                                                             |                                                                                          |
-| `matches`      | `id`, `tournament_id?`, `bracket_node_id?`, `player1_id`, `player2_id`, `player_setup` (JSON: class, gift), `ruleset_snapshot` (JSON), `status`, `winner_slot?`, `score1`, `score2`, `created_at`, `finished_at?` | The `status`/score columns are a **cache** for list views, rewritten after every command |
-| `match_events` | `match_id`, `seq`, `at`, `match_time_ms`, `body` (JSON)                                                                                                                                                           | Primary key `(match_id, seq)`. Append-only.                                              |
+| Table              | Columns (main)                                                                                                                                                                                                    | Notes                                                                                    |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `players`          | `id`, `name`, `color`, `created_at`                                                                                                                                                                               |                                                                                          |
+| `rulesets`         | `id`, `name`, `definition` (JSON), `updated_at`                                                                                                                                                                   | The full `Ruleset` document, validated with Zod when read and written                    |
+| `tournaments` (M5) | `id`, `name`, `format` (JSON), `default_ruleset_id`, `seeding` (JSON), `bracket` (JSON), `created_at`                                                                                                             |                                                                                          |
+| `matches`          | `id`, `tournament_id?`, `bracket_node_id?`, `player1_id`, `player2_id`, `player_setup` (JSON: class, gift), `ruleset_snapshot` (JSON), `status`, `winner_slot?`, `score1`, `score2`, `created_at`, `finished_at?` | The `status`/score columns are a **cache** for list views, rewritten after every command |
+| `match_events`     | `match_id`, `seq`, `at`, `match_time_ms`, `body` (JSON)                                                                                                                                                           | Primary key `(match_id, seq)`. Append-only.                                              |
 
 - **Why store rulesets as JSON documents?** A ruleset is a nested tree (objectives → variants → callouts) that is always read and written as a whole. Splitting it into 6 tables would add a lot of code for no benefit at this scale.
 - **Transactions:** a command is handled in one synchronous SQLite transaction: load events → `decide` → insert events → update the cached columns. Node runs our code on one thread and better-sqlite3 is synchronous, so commands for a match can never interleave.
@@ -346,35 +346,50 @@ Key rules in the reducer:
 
 ### 7.1 REST (JSON over HTTP, under `/api`)
 
-| Method & path                                                                        | Purpose                                                                   |
-| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| `GET/POST /players`, `PATCH/DELETE /players/:id`                                     | Player CRUD                                                               |
-| `GET/POST /rulesets`, `GET/PUT/DELETE /rulesets/:id`, `POST /rulesets/:id/duplicate` | Ruleset CRUD                                                              |
-| `GET/POST /tournaments`, `GET /tournaments/:id`                                      | Tournaments, with the resolved bracket                                    |
-| `POST /tournaments/:id/nodes/:nodeId/match`                                          | Create or open the match for a bracket node                               |
-| `GET/POST /matches`, `GET /matches/:id`                                              | List and create matches. `GET` returns the ruleset snapshot + all events. |
-| `POST /matches/:id/commands`                                                         | Send a command. Returns `200 { events }` or `409 { error }`.              |
-| `GET /stats/players`, `GET /stats/rulesets/:id`, `GET /stats/drinks`                 | Aggregated statistics                                                     |
-| `GET /export`                                                                        | Full JSON export                                                          |
+| Method & path                                                                        | Purpose                                                                                                                        |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| `GET/POST /players`, `PATCH/DELETE /players/:id`                                     | Player CRUD                                                                                                                    |
+| `GET/POST /rulesets`, `GET/PUT/DELETE /rulesets/:id`, `POST /rulesets/:id/duplicate` | Ruleset CRUD                                                                                                                   |
+| `GET/POST /tournaments`, `GET /tournaments/:id`                                      | Tournaments, with the resolved bracket                                                                                         |
+| `POST /tournaments/:id/nodes/:nodeId/match`                                          | Create or open the match for a bracket node                                                                                    |
+| `GET/POST /matches`, `GET/DELETE /matches/:id`                                       | List (`?status=live,paused&tournamentId=…`), create, read and delete matches. `GET` returns the ruleset snapshot + all events. |
+| `POST /matches/:id/commands`                                                         | Send a command. Returns `200 { events }` or `409 { error }`.                                                                   |
+| `GET /stats/players`, `GET /stats/rulesets/:id`, `GET /stats/drinks`                 | Aggregated statistics                                                                                                          |
+| `GET /export`                                                                        | Full JSON export                                                                                                               |
 
 Commands use REST instead of the WebSocket because a request/response pair gives the host a clear success or error for each click. The WebSocket is only for pushing updates out.
+
+Errors always have the shape `{ error: { code, message, issues? } }`:
+
+- `400 invalid_request`: the body failed Zod validation, and `issues` lists each problem.
+- `400 invalid_ruleset`: the ruleset failed `validateRuleset`, with `issues`.
+- `404 not_found`.
+- `409` with the `decide()` error code, e.g. `limit_reached` or `match_ended`, when a command is rejected. `409 in_use` when deleting a player who has matches.
+
+Each command runs in one SQLite transaction: load events → append any due expiry → `decide` → append → update the cached columns. Broadcasting happens after the commit, and the expiry timer for the match is rescheduled.
 
 ### 7.2 WebSocket (`/ws`)
 
 ```ts
 // client → server
-{ type: "subscribe";   topic: "match" | "tournament"; id: string; sinceSeq?: number }
-{ type: "unsubscribe"; topic: "match" | "tournament"; id: string }
+{ type: "subscribe";   topic: "match"; id: string; sinceSeq?: number }
+{ type: "subscribe";   topic: "matches" }                          // the match list
+{ type: "unsubscribe"; topic: "match"; id: string }
+{ type: "unsubscribe"; topic: "matches" }
 
 // server → client
-{ type: "hello"; serverNow: string }
+{ type: "hello"; serverNow: number }                               // epoch ms
 { type: "match.events"; matchId: string; events: MatchEvent[] }   // in seq order
-{ type: "tournament.changed"; tournamentId: string }               // client refetches via REST
+{ type: "matches.changed" }      // a match was created/deleted or its status/score changed; refetch
+{ type: "error"; code: string; message: string }
+// [M5] { type: "tournament.changed"; tournamentId: string }
 ```
 
 - **Catch-up:** on (re)connect, the client subscribes with the last `seq` it has, and the server sends everything after it. This handles reconnects, Cloud Run's connection time limit, and laptops waking from sleep.
 - If a client notices a gap in `seq`, it refetches the whole match.
 - The hub keeps subscriptions in memory, which works because there is one server process.
+- Subscribing and catching up happen in one synchronous step, so no event can be missed in between.
+- The message schemas live in `packages/shared/src/api`, shared by server and web.
 
 ---
 
