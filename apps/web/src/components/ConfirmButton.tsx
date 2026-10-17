@@ -18,6 +18,7 @@ export function ConfirmButton({
   const { armed, onClick } = useConfirmClick(onConfirm)
   return (
     <button
+      type="button"
       {...rest}
       className={[className, armed && ui.confirming].filter(Boolean).join(' ')}
       onClick={onClick}

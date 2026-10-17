@@ -397,17 +397,17 @@ Each command runs in one SQLite transaction: load events → append any due expi
 
 ### 8.1 Routes
 
-| Path                                   | Screen                                                        |
-| -------------------------------------- | ------------------------------------------------------------- |
-| `/`                                    | Home: live and recent matches, tournaments, quick "New match" |
-| `/players`                             | Player management                                             |
-| `/rulesets`, `/rulesets/:id`           | Ruleset list and editor                                       |
-| `/tournaments/new`, `/tournaments/:id` | Tournament creation and bracket view                          |
-| `/matches/new`                         | Standalone match setup                                        |
-| `/matches/:id/host`                    | **Host console** (the combined view in v1)                    |
-| `/matches/:id/view`                    | Spectator view, read-only, built in v1 but optional to use    |
-| `/matches/:id`                         | Match summary: timeline and score chart                       |
-| `/stats`                               | Statistics                                                    |
+| Path                                          | Screen                                                        |
+| --------------------------------------------- | ------------------------------------------------------------- |
+| `/`                                           | Home: live and recent matches, tournaments, quick "New match" |
+| `/players`                                    | Player management                                             |
+| `/rulesets`, `/rulesets/new`, `/rulesets/:id` | Ruleset list and editor                                       |
+| `/tournaments/new`, `/tournaments/:id`        | Tournament creation and bracket view                          |
+| `/matches/new`                                | Standalone match setup                                        |
+| `/matches/:id/host`                           | **Host console** (the combined view in v1)                    |
+| `/matches/:id/view`                           | Spectator view, read-only, built in v1 but optional to use    |
+| `/matches/:id`                                | Match summary: timeline and score chart                       |
+| `/stats`                                      | Statistics                                                    |
 
 ### 8.2 Live match store
 
@@ -431,7 +431,15 @@ Each command runs in one SQLite transaction: load events → append any due expi
 - **Variant chips** live in the confirmation toast for about 6 s. Clicking one sends `setVariants`.
 - **Tiebreaker mode:** when `status === "tiebreaker"`, the console renders only the instruction and two large winner buttons, with a confirm step.
 
-### 8.4 Theming
+### 8.4 Ruleset editor
+
+- The editor works on a local **draft** of the whole ruleset. Edits go through Immer (`produce`), so nested changes are written as plain mutations but stay immutable.
+- Each nested editor (callouts, variants…) gets an `Updater` focused on its own slice of the draft (`focus(update, d => d.objectives[i].callouts)`), so it never needs to know where it sits in the tree.
+- The draft is validated on every change with the same Zod schema and `validateRuleset()` the server uses. Problems are listed in the sticky save bar, and saving is blocked until they're fixed.
+- Ids for new items are short random strings. They only need to be unique within the ruleset, since matches keep their own snapshot.
+- Leaving with unsaved changes asks for confirmation (React Router's `useBlocker`, plus `beforeunload` for reloads).
+
+### 8.5 Theming
 
 - Design tokens are CSS custom properties in `theme/tokens.css`: colours, spacing and type scale.
 - Dark-first palette: stone greys, ember orange accents, and parchment text. Player 1 and Player 2 each get a colour token.

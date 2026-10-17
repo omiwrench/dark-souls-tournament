@@ -29,7 +29,7 @@ Praise the Sun! \[T]/
 
 ## 🕯️ Status
 
-**Bonfire lit.** A full match can be played in the host console. Next up: player and ruleset editors.
+**Bonfire lit.** Matches can be played, and players and rulesets can be managed in the app. Next up: tournaments and brackets.
 
 | Milestone                                | Status |
 | ---------------------------------------- | ------ |
@@ -38,8 +38,8 @@ Praise the Sun! \[T]/
 | M1: Domain core (rules, events, scoring) | ✅     |
 | M2: Server                               | ✅     |
 | M3: Playable match                       | ✅     |
-| M4: Editors                              | ⏳     |
-| M5: Tournaments & brackets               |        |
+| M4: Editors                              | ✅     |
+| M5: Tournaments & brackets               | ⏳     |
 | M6: History & stats                      |        |
 | M7: Polish & theming                     |        |
 | M8: Deploy to Cloud Run                  |        |
