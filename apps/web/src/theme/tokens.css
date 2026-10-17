@@ -1,26 +1,40 @@
 :root {
   color-scheme: dark;
 
+  /* Stone and embers */
   --color-bg: #0e0d0c;
   --color-surface: #1a1816;
+  --color-surface-raised: #24211e;
+  --color-surface-hover: #2e2a26;
   --color-border: #3a352f;
+  --color-border-strong: #57504a;
   --color-text: #e9e1d0;
   --color-text-muted: #9a917f;
+  --color-text-faint: #6b6458;
   --color-ember: #e8742a;
+  --color-ember-strong: #ff8c3a;
   --color-ember-glow: rgb(232 116 42 / 45%);
-  --color-player-1: #c9a227;
+  --color-gold: #d9b45a;
+  --color-player-1: #d9a63a;
   --color-player-2: #6f9fd8;
-  --color-danger: #b3261e;
+  --color-danger: #c9413a;
+  --color-danger-bg: #3a1a17;
+  --color-success: #7fae6a;
+  --color-focus: #f6c76b;
 
   /* Optimus Princeps is self-hosted in M7; serif fallback until then. */
   --font-display: 'Optimus Princeps', 'Cinzel', Georgia, serif;
   --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
 
   --space-1: 4px;
   --space-2: 8px;
-  --space-3: 16px;
-  --space-4: 24px;
-  --space-5: 40px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 40px;
 
   --radius: 6px;
+  --radius-lg: 10px;
+  --shadow: 0 8px 24px rgb(0 0 0 / 50%);
 }

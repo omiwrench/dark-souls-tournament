@@ -94,6 +94,9 @@ export type MatchState = {
 
 export const opponentOf = (player: PlayerSlot): PlayerSlot => (player === 1 ? 2 : 1)
 
+/** The element of a two-player pair that belongs to `slot`. */
+export const bySlot = <T>(pair: readonly [T, T], slot: PlayerSlot): T => pair[slot - 1] as T
+
 const emptyTally = (): DrinkTally => ({ sip: 0, shot: 0, finish: 0 })
 
 function initialPlayer(): PlayerState {

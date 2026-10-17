@@ -1,0 +1,97 @@
+.primary {
+  background: var(--color-ember);
+  border-color: var(--color-ember);
+  color: #1a0f08;
+  font-weight: 600;
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--color-ember-strong);
+  border-color: var(--color-ember-strong);
+}
+
+.danger {
+  border-color: var(--color-danger);
+  color: #f2b8b4;
+}
+
+.danger:hover:not(:disabled) {
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger);
+}
+
+.confirming {
+  background: var(--color-danger) !important;
+  border-color: var(--color-danger) !important;
+  color: white;
+  animation: pulse 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  to {
+    filter: brightness(1.25);
+  }
+}
+
+.kbd {
+  font-family: var(--font-mono);
+  font-size: 0.75em;
+  border: 1px solid currentcolor;
+  border-radius: 4px;
+  padding: 0 4px;
+  opacity: 0.7;
+}
+
+.dialog {
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: var(--space-5);
+  box-shadow: var(--shadow);
+  min-width: min(420px, calc(100vw - 32px));
+  max-width: min(560px, calc(100vw - 32px));
+}
+
+.dialog::backdrop {
+  background: rgb(0 0 0 / 60%);
+}
+
+.dialogTitle {
+  font-size: 1.4rem;
+  margin-bottom: var(--space-4);
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.fieldLabel {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.chip {
+  border-radius: 999px;
+  padding: 2px var(--space-3);
+  font-size: 0.85rem;
+}
+
+.chipOn {
+  background: var(--color-ember);
+  border-color: var(--color-ember);
+  color: #1a0f08;
+}
+
+.chipOn:hover:not(:disabled) {
+  background: var(--color-ember-strong);
+}

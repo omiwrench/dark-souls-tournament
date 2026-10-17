@@ -29,7 +29,7 @@ Praise the Sun! \[T]/
 
 ## 🕯️ Status
 
-**Bonfire lit.** Rules engine and server are done; next up is the host console, the first playable match.
+**Bonfire lit.** A full match can be played in the host console. Next up: player and ruleset editors.
 
 | Milestone                                | Status |
 | ---------------------------------------- | ------ |
@@ -37,8 +37,8 @@ Praise the Sun! \[T]/
 | M0: Scaffold                             | ✅     |
 | M1: Domain core (rules, events, scoring) | ✅     |
 | M2: Server                               | ✅     |
-| M3: Playable match                       | ⏳     |
-| M4: Editors                              |        |
+| M3: Playable match                       | ✅     |
+| M4: Editors                              | ⏳     |
 | M5: Tournaments & brackets               |        |
 | M6: History & stats                      |        |
 | M7: Polish & theming                     |        |

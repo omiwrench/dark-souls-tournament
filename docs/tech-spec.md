@@ -469,6 +469,7 @@ npm start            # production server, serving the built web app
 - **Reducer and `decide()`:** thorough unit tests. This is where the game rules live, and it's pure functions, which are easy to test. Cases: once-only vs repeatable and max count, ending objectives, time expiry, undo of the ending objective, variants with replace/add, tag callouts, each tiebreaker, and logging while paused.
 - **Bracket generation:** tests for 2–16 players, byes, third place, and double elimination.
 - **Server:** a few API tests using Fastify's built-in `inject` (no real network) against a temporary SQLite file.
+- **Host console render tests:** the console is rendered to HTML (React server rendering, no browser needed) for each match state, using the shared test harness (`@dst/shared/testing`). These catch crashes and missing content, not layout or interaction.
 - [LATER] Playwright end-to-end tests for the host console.
 
 ---
